@@ -1,9 +1,137 @@
 <!DOCTYPE html>
-{% extends "base.html" %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dublin Bikes App</title>
 
-{% block content %}
-    <h1>Hi, {{ user.username }}!</h1>
-    {% for post in posts %}
-    <div><p>{{ post.author.username }} says: <b>{{ post.body }}</b></p></div>
-    {% endfor %}
-{% endblock %}
+    <link href="../style.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="../main.js"></script>
+
+{#    navigation bar#}
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+{#    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.0/jquery.min.js"></script>#}
+
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+{#    调取google.visualization#}
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{#    used to import google map#}
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_GFOa8RKF4FM4SkpVD6LJdz0fI86pIac&callback=initMap"
+            type="text/javascript">
+    </script>
+
+</head>
+
+<body>
+
+    <div id="headBg" style="margin-bottom:0">
+            <h1>Dublin Bikes</h1>
+            <p>Find your best station!</p>
+          </div>
+
+    <nav class="navbar navbar-inverse">
+          <div class="container-fluid">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="index">Dublin Bikes.</a>
+            </div>
+            <div class="collapse navbar-collapse" id="myNavbar">
+              <ul class="nav navbar-nav">
+                <li class="active"><a href="index">Home</a></li>
+                <li><a href="gallery">Gallery</a></li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
+
+    <div id="map"></div>
+
+    <div id="sidebar">
+
+        <div id="weather">
+        <div id="icon"></div><p id="currentWeather"></p>
+            <p id="currentTemp"></p><p id="windSpeed"></p>
+            <br>
+        </div>
+
+        <div class="charts" id ="daily_div"></div>
+
+    </div>
+
+
+
+
+<script>
+
+    get_weather();
+
+    function get_weather(){
+
+    //call weather API from openweathermap
+    $.getJSON('http://api.openweathermap.org/data/2.5/weather?q=Dublin,ie&units=metric&appid=5508cb29a72478e8bc8021bbe590ee4e',function(data){
+    var weather = data.weather[0].description;
+    var temp=data.main.temp;
+    var windSpeed=data.wind.speed;
+    var icon = data.weather[0].icon;
+    var iconUrl = ("<img src='http://openweathermap.org/img/w/" + icon + ".png'>");
+
+    $("#icon").html(iconUrl);
+    $("#currentWeather").html("Current Weather: " + weather);
+    $("#currentTemp").html("Tempreture: " + temp + " °C");
+    $("#windSpeed").html("Wind Speed: " + windSpeed + " m/s");
+
+        });
+    }
+
+
+    function daily_chart(number) {
+
+        // import google chart packages
+        google.charts.load("visualization", "1", {packages:["corechart"]});
+
+        // get the json data from /daily URL
+        $.getJSON("/daily/" + number, null, function (data) {
+            // invoke the drawChart function
+            google.charts.setOnLoadCallback(drawChart(data));
+        });
+
+        function drawChart(data) {
+            var avg_bikes = data.week_average_bikes;
+            var avg_stands = data.week_average_stands;
+            var daily = new google.visualization.DataTable();
+
+            daily.addColumn('string', 'Day');
+            daily.addColumn('number', 'Bikes');
+            daily.addColumn('number', 'Stands');
+
+            daily.addRows([
+                ['Sunday', avg_bikes[0], avg_stands[0]],
+                ['Monday', avg_bikes[1], avg_stands[1]],
+                ['Tuesday', avg_bikes[2], avg_stands[2]],
+                ['Wednesday', avg_bikes[3], avg_stands[3]],
+                ['Thursday', avg_bikes[4], avg_stands[4]],
+                ['Friday', avg_bikes[5], avg_stands[5]],
+                ['Saturday', avg_bikes[6], avg_stands[6]]
+            ]);
+
+            //Set chart options
+            var options = {'title': 'Daily Averages:', 'width': 450, 'height': 400};
+
+            //instantiate and draw our chart, passing in some options
+            var chart = new google.visualization.BarChart(document.getElementById('daily_div'));
+            chart.draw(daily, options);
+        }
+    }
+
+
+</script>
+</body>
+</html>
